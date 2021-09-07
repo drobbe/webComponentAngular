@@ -144,6 +144,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "angular-web-component"
+    }
+  },
+  "defaultProject": "angular-web-component",
+  "cli": {
+    "analytics": false
+  }
 }
