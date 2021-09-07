@@ -26,9 +26,11 @@ Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protrac
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
 
-
 ## Comandos Importantes
 
-`ng build --prod --output-hashing none`  Para armar Componente
-`npm run build:component` para compilar el bundle todo junto
-`serve` install npm 
+Tienes que tener webpack Global
+Serve Glogbal
+
+`ng build --prod --output-hashing none` Para armar Componente
+`npm run build` para compilar el bundle todo junto con Webpack // no funca por tiene problemas con las dependicias webpack de angular
+`webpack ; serve .\build\angular-web-component\` ? buscar la forma de servir con webpack en dev

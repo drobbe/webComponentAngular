@@ -1,18 +1,19 @@
-<p>webphone works!</p>
-<p>sdasad {{ hola }}</p>
-<p>Server {{ Server }}</p>
+<p>Servidor {{ Server }}</p>
 <p>User {{ User }}</p>
-<p>Password {{ Password }}</p>
 <p>AuthUser {{ AuthUser }}</p>
-<p>DisplayName {{ DisplayName }}</p>
 <p>JanusServer {{ JanusServer }}</p>
+
+<hr />
+<p>Registrado: {{ registered | json }}</p>
+<p>Entrante: {{ entrante | json }}</p>
+<p>En Llamada: {{ enLlamada | json }}</p>
 
 <video
   #videoElement
   class="hide"
   id="remotevideo"
-  width="100%"
-  height="100%"
+  width="0%"
+  height="0%"
   autoplay
   playsinline
 ></video>
