@@ -1,10 +1,41 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>AngularWebComponent</title><base href="/"/><meta name="viewport" content="width=device-width,initial-scale=1"/><link rel="icon" type="image/x-icon" href="favicon.ico"/><link rel="stylesheet" href="styles.css"/><script>sessionStorage.setItem("hola", "hola");
-      sessionStorage.setItem("Server", "34.95.238.135");
-      sessionStorage.setItem("User", "bobo");
-      sessionStorage.setItem("Password", "1234");
-      sessionStorage.setItem("AuthUser", "bobo");
-      sessionStorage.setItem("DisplayName", "bobo");
-      sessionStorage.setItem(
-        "JanusServer",
-        "https://janus.mibot.cl:8089/janus"
-      );</script><script defer="defer" src="main.e06f1ab60c8732c0c7e6.js"></script></head><body><news-widget></news-widget></body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AngularWebComponent</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer="defer" src="webphone.js"></script>
+    <script defer="defer" src="main.e208c536a7158209829b.js"></script>
+  </head>
+  <body>
+    <button onclick="myFunction()">Iniciar</button><br />
+    <div
+      id="elemento"
+      style="
+        display: flex;
+        flex-direction: row-reverse;
+        background-color: antiquewhite;
+      "
+    >
+      <div>Sitio para insertar</div>
+    </div>
+  </body>
+  <script>
+    function myFunction() {
+      var elem = document.getElementById("elemento");
+      var webphone = new WebPhone(
+        "34.95.238.135",
+        "bobo",
+        "1234",
+        "bobo",
+        "bobo",
+        "https://janus.mibot.cl:8089/janus",
+        elem
+      );
+      webphone.Init();
+    }
+  </script>
+</html>

@@ -1,4 +1,4 @@
-<p>Servidor {{ Server }}</p>
+<!-- <p>Servidor {{ Server }}</p>
 <p>User {{ User }}</p>
 <p>AuthUser {{ AuthUser }}</p>
 <p>JanusServer {{ JanusServer }}</p>
@@ -6,7 +6,17 @@
 <hr />
 <p>Registrado: {{ registered | json }}</p>
 <p>Entrante: {{ entrante | json }}</p>
-<p>En Llamada: {{ enLlamada | json }}</p>
+<p>En Llamada: {{ enLlamada | json }}</p> -->
+
+<div
+  class="indicator"
+  [ngClass]="{
+    green: registered && !enLlamada,
+    red: !registered,
+    yellow: registered && enLlamada
+  }"
+  [title]="statusUser()"
+></div>
 
 <video
   #videoElement
@@ -16,4 +26,5 @@
   height="0%"
   autoplay
   playsinline
+  style="display: none"
 ></video>

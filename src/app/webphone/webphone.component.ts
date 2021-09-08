@@ -11,7 +11,7 @@ export class WebphoneComponent implements OnInit {
 
   /** @internal */
   @ViewChild('videoElement') videoElement: ElementRef;
-  myobserser: Observable<any>;
+  janusLoader: Observable<any>;
   enLlamada = false;
   entrante = false;
   registered = false;
@@ -49,17 +49,16 @@ export class WebphoneComponent implements OnInit {
       janusServer: this.JanusServer,
     });
 
-    this.myobserser = this.janusService.init([]);
+    this.janusLoader = this.janusService.init([]);
 
-    this.myobserser.subscribe(
-      (x) => console.log('Observer got a next value: ' + x),
-      (err) => console.error('Observer got an error: ' + err),
-      () => console.log('Observer got a complete notification')
+    this.janusLoader.subscribe(
+      (x) => console.log('janusLoader got a next value: ' + x),
+      (err) => console.error('janusLoader got an error: ' + err),
+      () => console.log('janusLoader got a complete notification')
     );
 
     this.janusService.test().subscribe(
       (x) => {
-        console.log('Observer 2 got a next value: ', x);
         if (x.message === 'remote stream') {
           clase.janusService.attachMediaStream(
             clase.videoElement.nativeElement,
@@ -68,6 +67,7 @@ export class WebphoneComponent implements OnInit {
         }
 
         if (x.message === 'error') {
+          clase.janusService.log('error', x, 'Error Janus');
           if (clase.registered) {
             // Reset status
             console.log('Cortar llamada ???');
@@ -77,19 +77,25 @@ export class WebphoneComponent implements OnInit {
           }
         }
 
+        if (x.message === 'registration_failed') {
+          if (clase.registered) {
+            // Reset status
+            console.log('Cortar llamada ???');
+          }
+          clase.janusService.log('error', x, 'registration_failed');
+        }
+
         if (x.message === 'registered') {
           clase.registered = true;
-          console.log('entro evento registered');
-          console.log('Aviso', 'Se ha registrado correctamente', 'Primary');
+          clase.janusService.log('trace', x, 'Registrado');
         }
 
         if (x.message === 'calling') {
-          console.log('entro evento calling');
-          console.log('Aviso', 'Llamada Conectada', 'Primary');
+          clase.janusService.log('trace', x, 'Llamada Conectada');
         }
 
         if (x.message === 'incoming call') {
-          console.log('entro evento incoming call');
+          clase.janusService.log('trace', x, 'Llamada Entrante');
 
           let doAudio = true,
             doVideo = true;
@@ -138,25 +144,22 @@ export class WebphoneComponent implements OnInit {
           console.log('Aviso', 'LLamada Entrante !!!', 'Primary');
           setTimeout(() => {
             clase.contestar();
-          }, 3000);
+          }, 1000);
           //clase.janusService.createAnswer(offerlessInvite, x.payload.jsep);
         }
         if (x.message === 'progress') {
-          console.log('entro evento progress');
           if (x.payload.jsep) {
             clase.janusService.handleRemoteJsep(x.payload.jsep);
           }
         }
         if (x.message === 'accepted') {
           clase.enLlamada = true;
-          console.log('entro evento accepted');
           if (x.payload.jsep) {
             clase.janusService.handleRemoteJsep(x.payload.jsep);
           }
         }
 
         if (x.message === 'updating call') {
-          console.log('entro evento updating call');
           if (x.payload.jsep) {
             var doAudio = x.payload.sdp.indexOf('m=audio ') > -1,
               doVideo = x.payload.sdp.indexOf('m=video ') > -1;
@@ -191,12 +194,11 @@ export class WebphoneComponent implements OnInit {
           clase.enLlamada = false;
           clase.entrante = false;
 
-          console.log('entro evento hangup');
-          console.log('Aviso', 'Llamada Finalizada');
+          clase.janusService.log('trace', x, 'Llamada Conectada');
         }
       },
-      (err) => console.log('Error: ', err),
-      () => console.log('Observer 2 got a complete notification')
+      (err) => console.error('Error: ', err),
+      () => console.log('Observer Janus got a complete notification')
     );
 
     // setTimeout(() => {
@@ -205,7 +207,7 @@ export class WebphoneComponent implements OnInit {
   }
 
   llamar() {
-    console.log('esta llamando !!!!!!!!!!!!!!!!');
+    //console.log('esta llamando !!!!!!!!!!!!!!!!');
     //this.janusService.llamar('936715099');
   }
 
@@ -214,15 +216,17 @@ export class WebphoneComponent implements OnInit {
   // }
 
   contestar() {
-    console.log('Esta contestando!!!!!!!!!!!!!!!!!!!!');
+    //console.log('Esta contestando!!!!!!!!!!!!!!!!!!!!');
     this.janusService.createAnswer(this.offerlessInvite, this.jsep);
     this.entrante = false;
   }
 
-  // statusUser(): string {
-  //   if (!this.registered) return 'Desconectado';
-  //   if (this.entrante) return 'LLamada entrante';
-  //   if (this.enLlamada) return 'En llamada';
+  statusUser(): string {
+    if (!this.registered) return 'Desconectado';
+    if (this.entrante) return 'LLamada entrante';
+    if (this.enLlamada) return 'En llamada';
+    if (this.registered) return 'Registrado';
 
-  //   return '-';
+    return '-';
+  }
 }

@@ -9,6 +9,7 @@ export const ON_ACCEPTED = 'accepted';
 export const ON_UPDATING_CALL = 'updating call';
 export const ON_REMOTE_STREAM = 'remote stream';
 export const ON_REGISTERED = 'registered';
+export const ON_REGISTERED_FAIL = 'registered fail';
 export const ON_HANGUP = 'hangup';
 export const ON_CALLING = 'calling';
 export const ON_INCOMINGCALL = 'incoming call';

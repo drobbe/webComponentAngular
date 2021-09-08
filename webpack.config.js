@@ -1,6 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const RemovePlugin = require("remove-files-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   entry: [
@@ -11,13 +12,6 @@ module.exports = {
   // watch: true,
 
   mode: "production",
-  // devServer: {
-  //   static: {
-  //     directory: path.join(__dirname, "build"),
-  //   },
-  //   compress: true,
-  //   port: 5000,
-  // },
 
   output: {
     path: path.resolve(__dirname, "build/angular-web-component"),
@@ -34,7 +28,14 @@ module.exports = {
       },
       before: {
         include: ["./build"],
+        folder: "./build/angular-web-component",
+        method: (absoluteItemPath) => {
+          return new RegExp(/\main\.map$/, "m").test(absoluteItemPath);
+        },
       },
     }),
+    // new CopyWebpackPlugin([
+    //   { from: "./src/webphone.js", to: "./build/angular-web-component" },
+    // ]),
   ],
 };

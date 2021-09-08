@@ -158,7 +158,7 @@ export class JanusService {
 
     return new Observable((subscriber) => {
       Janus.init({
-        debug: 'all',
+        debug: ['trace', 'warn', 'error'],
         callback(): void {
           // Make sure the browser supports WebRTC
           if (!Janus.isWebrtcSupported()) {
@@ -361,9 +361,13 @@ export class JanusService {
         if (result && result['event']) {
           let event = result['event'];
           if (event === 'registration_failed') {
-            Janus.warn(
-              'Registration failed: ' + result['code'] + ' ' + result['reason']
+            Janus.log(
+              'Unsuccessfully registered as ' + result['username'] + '!'
             );
+            subscriber.next({
+              message: fromModels.ON_REGISTERED_FAIL,
+              payload: { result },
+            });
 
             return;
           }
@@ -449,8 +453,8 @@ export class JanusService {
         }
       },
       onlocalstream: function (stream) {
-        console.log('No deberia caer aqui 1');
-        console.log(stream);
+        // console.log('No deberia caer aqui 1');
+        // console.log(stream);
       },
       onremotestream: function (stream) {
         subscriber.next({
@@ -462,26 +466,6 @@ export class JanusService {
         Janus.log(' ::: Got a cleanup notification :::');
         if (instance.handle) instance.handle.callId = null;
       },
-    });
-  }
-
-  attachVideoRoom(url): Observable<fromModels.JanusAttachCallbackData> {
-    // Create session
-    const instance = this;
-    return new Observable((subscriber) => {
-      instance.janus = new Janus({
-        server: url,
-        iceServers: this.iceServers,
-        success: () => {
-          instance._attachVideoRoomHelper(subscriber);
-        },
-        error(error): void {
-          subscriber.error(error);
-        },
-        destroyed(): void {
-          // window.location.reload();
-        },
-      });
     });
   }
 
@@ -504,23 +488,6 @@ export class JanusService {
         },
       });
     });
-  }
-
-  register(
-    name: string,
-    userId: string,
-    roomId: string | number,
-    pin: string
-  ): void {
-    const register = {
-      request: 'join',
-      room: roomId,
-      ptype: 'publisher',
-      display: name,
-      id: userId,
-      pin,
-    };
-    this.handle.send({ message: register });
   }
 
   handleRemoteJsep(jsep): void {
@@ -548,221 +515,11 @@ export class JanusService {
     });
   }
 
-  draw(canvasContext, videoElement): void {
-    canvasContext.drawImage(videoElement, 0, 0);
-    const centerX = canvasContext.canvas.width / 2;
-    const centerY = canvasContext.canvas.height / 2;
-    const videoWidth = videoElement.videoWidth;
-    const videoHeight = videoElement.videoHeight;
-
-    canvasContext.fillStyle = '#000';
-    canvasContext.fillRect(
-      0,
-      0,
-      canvasContext.canvas.width,
-      canvasContext.canvas.height
-    );
-
-    canvasContext.save();
-    canvasContext.translate(centerX, centerY);
-    canvasContext.drawImage(
-      videoElement,
-      -videoWidth / 2,
-      -videoHeight / 2,
-      videoWidth,
-      videoHeight
-    );
-    canvasContext.restore();
-  }
-
-  startDrawingLoop(canvasElement, videoElement, frameRate: number): void {
-    // Drawing loop using AudioContext oscillator. requestAnimationFrame doesn't fire
-    // on background tabs, so this is a hack to make this work when the user switches tabs
-
-    const instance = this;
-    instance.drawLoopActive = true;
-    const canvasContext = canvasElement.getContext('2d');
-
-    const stepMilliSeconds = 1000 / frameRate;
-
-    function step(): void {
-      if (instance.drawLoopActive) {
-        instance.draw(canvasContext, videoElement);
-        setTimeout(step, stepMilliSeconds);
-        // requestAnimationFrame(step);
-      }
-    }
-    step();
-  }
-
-  _muteVideo(videoElement): void {
-    // Mute a given video element
-
-    const instance = this;
-    function mute(event): void {
-      videoElement.muted = 'muted';
-      videoElement.removeEventListener('playing', mute);
-    }
-
-    videoElement.addEventListener('playing', mute);
-  }
-
-  _sizeCanvasElement(
-    videoWidth: number,
-    videoHeight: number
-  ): { canvasWidth: number; canvasHeight: number } {
-    // We're keeping the height the same. Goal is to add black bars to the sides
-    // if we're in portrait mode and crop to the center if we're in landscape.
-    return {
-      canvasWidth: (videoHeight * 4) / 3,
-      canvasHeight: videoHeight,
-    };
-  }
-
-  _videoElementSafariHacks(videoElement): void {
-    // safari requires that the video element be in the body
-    const body = document.getElementsByTagName('body')[0];
-    body.appendChild(videoElement);
-    videoElement.setAttribute('style', 'width: 0; height: 0;');
-
-    // safari doesn't always auto-play the way you'd like it to
-    videoElement.addEventListener('canplay', () => videoElement.play());
-  }
-
-  _createVideoElement(canvasId: string, videoStream: any): any {
-    // Create the video element and attach it to the canvas
-
-    const videoElement = document.createElement('video');
-    const canvasElement: any = document.getElementById(canvasId);
-
-    // Firefox has a bug where calling captureStream before calling getContext results in an error.
-    canvasElement.getContext('2d');
-
-    const canvasStream = canvasElement.captureStream();
-    const videoSettings = videoStream.getVideoTracks()[0].getSettings();
-
-    this._videoElementSafariHacks(videoElement);
-
-    Janus.attachMediaStream(videoElement, videoStream);
-    videoElement.autoplay = true;
-    videoElement.setAttribute('playsinline', 'true');
-    videoElement.setAttribute('id', 'self-video');
-
-    // Some browsers don't like it if we set the muted attribute before the video is playing
-    this._muteVideo(videoElement);
-
-    const { canvasWidth, canvasHeight } = this._sizeCanvasElement(
-      videoSettings.width,
-      videoSettings.height
-    );
-    canvasElement.width = canvasWidth;
-    canvasElement.height = canvasHeight;
-
-    const audioTrack = videoStream.getAudioTracks().find((item) => item);
-    if (!!audioTrack) {
-      canvasStream.addTrack(videoStream.getAudioTracks()[0]);
-    }
-
-    this.startDrawingLoop(canvasElement, videoElement, videoSettings.frameRate);
-
-    return {
-      videoElement,
-      canvasStream,
-    };
-  }
-
   unPublishOwnFeed(): void {
     // Unpublish your own feed
     const unpublish = { request: 'unpublish' };
     this.handle.send({ message: unpublish });
     this.cleanupLocalStream();
-  }
-
-  publishOwnFeed(
-    audioDeviceId: string | null,
-    videoDeviceId: string,
-    canvasId: string = 'canvas-self',
-    skipVideoCapture: boolean = false
-  ): Observable<boolean> {
-    // Publish our own feed
-
-    return new Observable((subscriber) => {
-      if (this.publishWebrtcState) {
-        // Already publishing. Need to unpublish, wait until we're done unpublishing, and then republish
-        this.unPublishOwnFeed();
-      }
-
-      // Wait until we're not publishing before starting to publish again. Note that
-      // this will immediately complete if we haven't started publishing yet.
-      interval(100)
-        .pipe(takeWhile(() => this.publishWebrtcState))
-        .subscribe({
-          complete: () => {
-            this.createStreamAndOffer(
-              subscriber,
-              audioDeviceId,
-              videoDeviceId,
-              canvasId,
-              skipVideoCapture
-            );
-          },
-        });
-    });
-  }
-
-  createStreamAndOffer(
-    subscriber,
-    audioDeviceId: string | null,
-    videoDeviceId: string,
-    canvasId: string,
-    skipVideoCapture: boolean,
-    retryCount = 0
-  ): void {
-    const instance = this;
-    return;
-    if (skipVideoCapture) {
-      // We don't create any video element, etc.
-      const canvasElement: any = document.getElementById(canvasId);
-      const canvasStream = canvasElement.captureStream();
-      //return this.createOffer(subscriber, canvasStream);
-    } else {
-      // Common case. We need to create a video element
-      instance.webrtcService
-        .getUserMedia(audioDeviceId, videoDeviceId)
-        .then((videoStream) => {
-          instance.localStream = videoStream;
-          const { videoElement, canvasStream } = instance._createVideoElement(
-            canvasId,
-            videoStream
-          );
-          instance.videoElement = videoElement;
-          // this.createOffer(subscriber, canvasStream);
-        })
-        .catch((error) => {
-          // Some devices get intermittent errors. I'm doing a retry here. Not a warm-fuzzy solution. Future work might
-          // find a race condition where we need to wait for an event before calling getUserMedia
-          if (retryCount < 5) {
-            setTimeout(() => {
-              instance.createStreamAndOffer(
-                subscriber,
-                audioDeviceId,
-                videoDeviceId,
-                canvasId,
-                skipVideoCapture,
-                retryCount + 1
-              );
-            }, 1000);
-          }
-        });
-    }
-  }
-
-  llamar(numero: string): void {
-    this._createOffer(`sip:772051${numero}@${this.server}`);
-  }
-
-  colgar(): void {
-    this.handle.hangup();
   }
 
   _createOffer(uri: string): void {
@@ -897,30 +654,6 @@ export class JanusService {
     });
   }
 
-  toggleMute(): boolean {
-    const muted = this.handle.isAudioMuted();
-    if (muted) {
-      this.handle.unmuteAudio();
-    } else {
-      this.handle.muteAudio();
-    }
-    return this.handle.isAudioMuted();
-  }
-
-  setMute(mute: boolean): boolean {
-    const muted = this.handle.isAudioMuted();
-    if (muted === mute) {
-      return this.handle.isAudioMuted();
-    }
-
-    if (mute) {
-      this.handle.muteAudio();
-    } else {
-      this.handle.unmuteAudio();
-    }
-    return this.handle.isAudioMuted();
-  }
-
   requestSubstream(feed: RemoteFeed, substreamId: number): void {
     this.remoteHandles[feed.id].send({
       message: { request: 'configure', substream: substreamId },
@@ -957,12 +690,27 @@ export class JanusService {
   }
 
   setData(data: InitData) {
-    console.log('!!!!!!!!');
     this.server = data.server;
     this.user = data.user;
     this.password = data.password;
     this.authUser = data.authUser;
     this.displayName = data.displayName;
     this.janusServer = data.janusServer;
+  }
+
+  llamar(numero: string): void {
+    this._createOffer(`sip:772051${numero}@${this.server}`);
+  }
+
+  colgar(): void {
+    this.handle.hangup();
+  }
+
+  log(method, obj, msg = null): void {
+    if ((msg = null)) {
+      Janus[method](obj);
+      return;
+    }
+    Janus[method](msg, obj);
   }
 }

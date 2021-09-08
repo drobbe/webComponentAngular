@@ -1,0 +1,19 @@
+.indicator {
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+  background-color: #838383;
+  border-radius: 999px;
+}
+
+.green {
+  background-color: #4caf50;
+}
+
+.red {
+  background-color: #ce3131;
+}
+
+.yellow {
+  background-color: #c9b92a;
+}
