@@ -5,9 +5,8 @@
     <title>AngularWebComponent</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <link rel="stylesheet" href="styles.css" />
-    <script defer="defer" src="webphone.js"></script>
+    <!-- <script defer="defer" src="webphone.js"></script> -->
+    <script defer="defer" src="final.js"></script>
   </head>
   <body>
     <button onclick="myFunction()">Iniciar</button><br />
@@ -34,7 +33,38 @@
         "https://janus.mibot.cl:8089/janus",
         elem
       );
-      webphone.Init();
+      webphone.Init({
+        remote_stream: (recevt) => {
+          console.log("event", recevt);
+        },
+        error: (recevt) => {
+          console.log("event", recevt);
+        },
+        registration_failed: (recevt) => {
+          console.log("event", recevt);
+        },
+        registered: (recevt) => {
+          console.log("event", recevt);
+        },
+        calling: (recevt) => {
+          console.log("event", recevt);
+        },
+        incoming: (recevt) => {
+          console.log("event", recevt);
+        },
+        progress: (recevt) => {
+          console.log("event", recevt);
+        },
+        accepted: (recevt) => {
+          console.log("event", recevt);
+        },
+        updating: (recevt) => {
+          console.log("event", recevt);
+        },
+        hangup: (recevt) => {
+          console.log("event", recevt);
+        },
+      });
     }
   </script>
 </html>

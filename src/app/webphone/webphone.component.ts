@@ -1,4 +1,12 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { JanusService } from '../services/Janus/janus.service';
 @Component({
@@ -15,7 +23,6 @@ export class WebphoneComponent implements OnInit {
   enLlamada = false;
   entrante = false;
   registered = false;
-  hola = '';
   offerlessInvite: any;
   Server: String;
   User: String;
@@ -23,11 +30,11 @@ export class WebphoneComponent implements OnInit {
   AuthUser: String;
   DisplayName: String;
   JanusServer: String;
+  @Output('event-listener') eventListener = new EventEmitter();
 
   constructor(private janusService: JanusService) {}
 
   ngOnInit(): void {
-    this.hola = sessionStorage.getItem('hola');
     this.Server = sessionStorage.getItem('Server');
     this.User = sessionStorage.getItem('User');
     this.Password = sessionStorage.getItem('Password');
@@ -67,7 +74,7 @@ export class WebphoneComponent implements OnInit {
         }
 
         if (x.message === 'error') {
-          clase.janusService.log('error', x, 'Error Janus');
+          clase.eventListener.emit({ ...x, ...{ type: 'error' } });
           if (clase.registered) {
             // Reset status
             console.log('Cortar llamada ???');
@@ -82,20 +89,23 @@ export class WebphoneComponent implements OnInit {
             // Reset status
             console.log('Cortar llamada ???');
           }
-          clase.janusService.log('error', x, 'registration_failed');
+          clase.eventListener.emit({
+            ...x,
+            ...{ type: 'registration_failed' },
+          });
         }
 
         if (x.message === 'registered') {
           clase.registered = true;
-          clase.janusService.log('trace', x, 'Registrado');
+          clase.eventListener.emit({ ...x, ...{ type: 'registered' } });
         }
 
         if (x.message === 'calling') {
-          clase.janusService.log('trace', x, 'Llamada Conectada');
+          clase.eventListener.emit({ ...x, ...{ type: 'calling' } });
         }
 
         if (x.message === 'incoming call') {
-          clase.janusService.log('trace', x, 'Llamada Entrante');
+          clase.eventListener.emit({ ...x, ...{ type: 'incoming call' } });
 
           let doAudio = true,
             doVideo = true;
@@ -103,12 +113,12 @@ export class WebphoneComponent implements OnInit {
           // What has been negotiated?
           doAudio = x.payload.jsep.sdp.indexOf('m=audio ') > -1;
           doVideo = x.payload.jsep.sdp.indexOf('m=video ') > -1;
-          console.log(
-            'Audio ' + (doAudio ? 'has' : 'has NOT') + ' been negotiated'
-          );
-          console.log(
-            'Video ' + (doVideo ? 'has' : 'has NOT') + ' been negotiated'
-          );
+          // console.log(
+          //   'Audio ' + (doAudio ? 'has' : 'has NOT') + ' been negotiated'
+          // );
+          // console.log(
+          //   'Video ' + (doVideo ? 'has' : 'has NOT') + ' been negotiated'
+          // );
 
           if (x.payload.jsep) {
           } else {
@@ -194,16 +204,12 @@ export class WebphoneComponent implements OnInit {
           clase.enLlamada = false;
           clase.entrante = false;
 
-          clase.janusService.log('trace', x, 'Llamada Conectada');
+          clase.eventListener.emit({ ...x, ...{ type: 'hangup' } });
         }
       },
       (err) => console.error('Error: ', err),
       () => console.log('Observer Janus got a complete notification')
     );
-
-    // setTimeout(() => {
-    //   this.llamar();
-    // }, 10000);
   }
 
   llamar() {

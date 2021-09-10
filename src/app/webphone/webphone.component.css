@@ -2,10 +2,12 @@
   display: block;
   width: 0.75rem;
   height: 0.75rem;
-  background-color: #838383;
   border-radius: 999px;
 }
 
+.gray {
+  background-color: #838383;
+}
 .green {
   background-color: #4caf50;
 }

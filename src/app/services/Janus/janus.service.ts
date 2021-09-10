@@ -302,7 +302,6 @@ export class JanusService {
       opaqueId: this.opaqueId,
       success(pluginHandle): void {
         instance.handle = pluginHandle;
-        console.log('pluginHandle', pluginHandle);
 
         subscriber.next({
           message: fromModels.ATTACH_SUCCESS,
@@ -472,7 +471,6 @@ export class JanusService {
   test(): Observable<fromModels.JanusAttachCallbackData> {
     // Create session
     const instance = this;
-    console.log('intance', instance);
     return new Observable((subscriber) => {
       instance.janus = new Janus({
         server: instance.janusServer,
@@ -548,110 +546,6 @@ export class JanusService {
   attachMediaStream(element: any, stream: any): void {
     // const element
     Janus.attachMediaStream(element, stream);
-  }
-
-  attachRemoteFeed(
-    feed: RemoteFeed,
-    room: RoomInfo,
-    pin: string
-  ): Observable<fromModels.JanusAttachCallbackData> {
-    // A new feed has been published, create a new plugin handle and attach to it as a subscriber
-
-    const instance = this;
-
-    return new Observable((subscriber) => {
-      instance.janus.attach({
-        plugin: 'janus.plugin.videoroom',
-        opaqueId: instance.opaqueId,
-        success(pluginHandle): void {
-          instance.remoteHandles[feed.id] = pluginHandle;
-          instance.remoteHandles[feed.id].videoCodec = feed.video_codec;
-
-          const subscribe = {
-            request: 'join',
-            room: room.id,
-            ptype: 'subscriber',
-            feed: feed.id,
-            private_id: room.privateId,
-            substream: 0,
-            pin,
-          };
-          instance.remoteHandles[feed.id].send({ message: subscribe });
-        },
-
-        error(error): void {
-          subscriber.error(error);
-        },
-
-        onmessage(msg, jsep): void {
-          subscriber.next({
-            message: fromModels.ON_REMOTE_FEED_MESSAGE,
-            payload: {
-              msg,
-              jsep,
-              feed,
-              room,
-            },
-          });
-          if (!!jsep) {
-            instance.answerRemoteFeedJsep(jsep, feed, room);
-          }
-        },
-
-        webrtcState(on): void {
-          subscriber.next({
-            message: fromModels.REMOTE_FEED_WEBRTC_STATE,
-            payload: {
-              on,
-              feed,
-              room,
-            },
-          });
-        },
-
-        onlocalstream(stream): void {
-          console.log('Would never expect to get here');
-        },
-
-        slowLink(msg): void {
-          subscriber.next({
-            message: fromModels.REMOTE_FEED_SLOW_LINK,
-            payload: {
-              feedId: feed.id,
-            },
-          });
-        },
-
-        onremotestream(stream): void {
-          // Save off remote stream
-
-          const streamId = instance._get_random_string();
-          instance.streams[streamId] = stream;
-
-          const numVideoTracks = stream.getVideoTracks()
-            ? stream.getVideoTracks().length
-            : 0;
-          subscriber.next({
-            message: fromModels.ON_REMOTE_REMOTE_STREAM,
-            payload: {
-              streamId,
-              numVideoTracks,
-              feed,
-              room,
-            },
-          });
-        },
-        oncleanup(): void {
-          subscriber.next({
-            message: fromModels.ON_REMOTE_CLEANUP,
-            payload: {
-              feed,
-              room,
-            },
-          });
-        },
-      });
-    });
   }
 
   requestSubstream(feed: RemoteFeed, substreamId: number): void {
